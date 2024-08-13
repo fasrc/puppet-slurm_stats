@@ -1,3 +1,4 @@
 #!/bin/bash
 
-/usr/bin/sshare --parsable2 -a -o "User,Account,Fairshare" | sort | tr -d ' ' > $1
+/usr/bin/date -d "yesterday" '+%B %d' > <%= @data_store %>/fairshare.txt
+/usr/bin/sshare -n --parsable2 -a -o "User,Account,Fairshare" | sort | tr -d ' ' >> <%= @data_store %>/fairshare.txt
