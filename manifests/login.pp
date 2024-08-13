@@ -20,7 +20,7 @@ class slurm_stats::login (
   }
 
   cron { 'slurm_stats':
-    command => '/usr/bin/cp -rf ${data_store}/slurm_stats* /usr/local/share/slurm_stats/.',
+    command => "/usr/bin/cp -rf ${data_store}/slurm_stats* /usr/local/share/slurm_stats/.",
     user    => 'root',
     hour    => $cronhour,
     minute  => $cronmin,
