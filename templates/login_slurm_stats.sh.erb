@@ -1,10 +1,24 @@
 #/bin/bash
 
-echo ""
-echo "Greetings ${USER}! Here are some useful stats for you from the last day"
-echo "Fairshare Score: 0.5"
-echo "Usage: 500 CPU Hours 60 GPU Hours"
-echo "Jobs by State: 4000 Running 300 Completed 400 Canceled 500 Failed 3000 Out of Memory"
-echo "Average Job Wait Time: 5 hours | Average Job Run Time: 1 day"
-echo "Average Number of Cores Used: 1 Allocated: 4 | Average Memory Used: 4GB Allocated: 8GB | Average Number of GPUs Used: 0"
-echo "Job Efficiency: 50% CPU 50% Memory"
+date=$(head -n 1 /usr/local/share/slurm_stats/slurm_stats_fairshare.txt)
+fair=$(grep "${USER}|" /usr/local/share/slurm_stats/slurm_stats_fairshare.txt)
+
+if [ -n "$fair" ]
+then
+  echo ""
+  echo "Slurm Stats for ${date}"
+  fairshare="End of Day Fairshare:"
+  for i in $fair
+  do
+    account=$(cut -d '|' -f 2 ${fair})
+    score=$(cut -d '|' -f 3 ${fair})
+    fairshare="${fairshare} ${account}: $score |"
+  done
+  echo "${fairshare}"
+
+  echo "Usage: 500 CPU Hours 60 GPU Hours"
+  echo "Jobs by State: 4000 Running 300 Completed 400 Canceled 500 Failed 3000 Out of Memory"
+  echo "Average Job Wait Time: 5 hours | Average Job Run Time: 1 day"
+  echo "Average Number of Cores Used: 1 Allocated: 4 | Average Memory Used: 4GB Allocated: 8GB | Average Number of GPUs Used: 0"
+  echo "Job Efficiency: 50% CPU 50% Memory"
+fi
