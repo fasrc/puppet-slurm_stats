@@ -5,6 +5,8 @@ class slurm_stats::data (
   Integer $cronmin    = 30,
 ){
 
+  ensure_packages(['python3-pandas'], {'ensure' => present})
+
   file {'/usr/local/sbin/slurm_stats':
     content => template('slurm_stats/slurm_stats.erb'),
     owner   => 'root',
