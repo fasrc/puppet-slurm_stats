@@ -7,12 +7,12 @@ if [ -n "$fair" ]
 then
   echo ""
   echo "Slurm Stats for ${date}"
-  fairshare="End of Day Fairshare:"
+  fairshare="End of Day Fairshare |"
   for i in $fair
   do
-    account=$(cut -d '|' -f 2 ${fair})
-    score=$(cut -d '|' -f 3 ${fair})
-    fairshare="${fairshare} ${account}: $score |"
+    account=$(echo ${i} | cut -d '|' -f 2)
+    score=$(echo ${i} | cut -d '|' -f 3)
+    fairshare="${fairshare} ${account}: ${score} |"
   done
   echo "${fairshare}"
 
