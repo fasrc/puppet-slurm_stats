@@ -1,8 +1,8 @@
 # slurm_stats::data pulls the data
 class slurm_stats::data (
   String  $data_store = '/slurm/etc/slurm',
-  Integer $cronhour   = '2',
-  Integer $cronmin    = '30',
+  Integer $cronhour   = 2,
+  Integer $cronmin    = 30,
 ){
 
   file {'/usr/local/sbin/slurm_stats':
