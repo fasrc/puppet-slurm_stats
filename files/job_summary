@@ -1,0 +1,138 @@
+#!/usr/bin/python3
+
+import sys,os,subprocess,shlex
+import time,datetime
+from os import path
+import pandas as pd
+import numpy as np
+from io import StringIO
+from datetime import date
+
+def time_to_float(time):
+    """ converts [dd-[hh:]]mm:ss time to seconds """
+    if isinstance(time, float):
+        return time
+    days, hours = 0, 0
+
+    if "-" in time:
+        days = int(time.split("-")[0]) * 86400
+        time = time.split("-")[1]
+    time = time.split(":")
+
+    if len(time) > 2:
+        hours = int(time[0]) * 3600
+
+    mins = int(time[-2]) * 60
+    secs = float(time[-1])
+
+    return days + hours + mins + secs
+
+d = date.today()-datetime.timedelta(1)
+
+q = f'sacct -aP --units=G --format=User,JobID,Elapsed,ReqMem,ReqCPUS,Timelimit,State,TotalCPU,MaxRSS,Submit,Start,ReqTRES --state=CA,CD,F,NF,OOM,PR,TO -S {d}T00:00:00 -E {d}T23:59:59'
+res = subprocess.check_output([q], shell=True)
+res = str(res, 'utf-8')
+jobs = pd.read_csv(StringIO(res), sep='|')
+jobs = jobs.fillna(0.)
+
+jobs['MaxRSS'] = jobs.MaxRSS.astype('str')
+jobs['ReqMem'] = jobs.ReqMem.astype('str')
+jobs['ReqTRES'] = jobs.ReqTRES.astype('str')
+
+jobs['JobID'] = jobs.JobID.map(lambda x: x.split('.')[0])
+jobs['MaxRSS'] = jobs.MaxRSS.str.replace('G', '').astype('float')
+jobs['ReqMem'] = jobs.ReqMem.str.replace('G', '').astype('float')
+jobs['TotalCPU'] = jobs.TotalCPU.map(lambda x: time_to_float(x))
+jobs['Elapsed'] = jobs.Elapsed.map(lambda x: time_to_float(x))
+jobs['Timelimit'] = jobs.Timelimit.map(lambda x: time_to_float(x))
+
+pattern = '%Y-%m-%dT%H:%M:%S'
+jobs['Submit'] = jobs.Submit.map(lambda x: int(time.mktime(time.strptime(x, pattern))))
+jobs['Start'] = jobs.Start.map(lambda x: int(time.mktime(time.strptime(x, pattern))))
+
+print(jobs)
+
+users = jobs['User'].unique()
+
+for u in users:
+  if u != 0.0:
+    jobids = jobs[jobs['User'] == u].JobID
+
+    print(jobids)
+
+    num_jgpu = 0
+
+    tot_cpu_hours = 0.
+    tot_gpu_hours = 0.
+    ave_core_use = 0.
+    ave_cpu_req = 0.
+    ave_cpu_eff = 0.
+    ave_mem_use = 0.
+    ave_mem_req = 0.
+    ave_mem_eff = 0.
+    ave_time_use = 0.
+    ave_time_req = 0.
+    ave_time_eff = 0.
+    ave_wait_time = 0
+    ave_gpu_req = 0.
+
+    for j in jobids:
+      cpu_use = np.max(jobs[jobs['JobID'] == j].TotalCPU)
+      cpu_req = np.max(jobs[jobs['JobID'] == j].ReqCPUS)
+      time_use = np.max(jobs[jobs['JobID'] == j].Elapsed)
+      time_req = np.max(jobs[jobs['JobID'] == j].Timelimit)
+      mem_use = np.max(jobs[jobs['JobID'] == j].MaxRSS)
+      mem_req = np.max(jobs[jobs['JobID'] == j].ReqMem)
+      cpu_eff = np.divide(np.divide(cpu_use, time_use, out=np.zeros_like(cpu_use), where=time_use!=0), cpu_req)
+      mem_eff = np.divide(mem_use, mem_req, out=np.zeros_like(mem_use), where=mem_req!=0)
+      time_eff = np.divide(time_use, time_req, out=np.zeros_like(time_use), where=time_req!=0)
+
+      cores_use = cpu_eff * cpu_req
+
+      submit = np.min(jobs[jobs['JobID'] == j].Submit)
+      start = np.min(jobs[jobs['JobID'] == j].Start)
+      wait_time=start-submit
+
+      gpu_req = jobs[(jobs['JobID'] == j) & (jobs['User'] == u)].ReqTRES.to_string().split(',')
+
+      gpu_req = [s for s in gpu_req if s.startswith('gres/gpu')]
+      gpu_req = ''.join(gpu_req)
+
+      if 'gres/gpu' in gpu_req:
+        num_jgpu = num_jgpu + 1
+        gpu_req = gpu_req.replace('gres/gpu=', '')
+        ave_gpu_req = ave_gpu_req + float(gpu_req)
+        tot_gpu_hours = tot_gpu_hours + float(gpu_req) * time_use
+
+      tot_cpu_hours = tot_cpu_hours + cpu_req * time_use
+
+      ave_core_use = ave_core_use + cores_use
+      ave_cpu_req = ave_cpu_req + cpu_req
+      ave_cpu_eff = ave_cpu_eff + cpu_eff
+      ave_mem_use = ave_mem_use + mem_use
+      ave_mem_req = ave_mem_req + mem_req
+      ave_mem_eff = ave_mem_eff + mem_eff
+      ave_time_use = ave_time_use + time_use
+      ave_time_req = ave_time_req + time_req
+      ave_time_eff = ave_time_eff + time_eff
+      ave_wait_time = ave_wait_time + wait_time
+
+    # Computing Results
+    num_j = float(len(jobids))
+
+    ave_core_use = ave_core_use / num_j
+    ave_cpu_req = ave_cpu_req / num_j
+    ave_cpu_eff = ave_cpu_eff * 100 / num_j
+    ave_mem_use = ave_mem_use / num_j
+    ave_mem_req = ave_mem_req / num_j
+    ave_mem_eff = ave_mem_eff * 100  / num_j
+    ave_time_use = ave_time_use / num_j
+    ave_time_req = ave_time_req / num_j
+    ave_time_eff = ave_time_eff *100 / num_j
+    ave_wait_time = float(ave_wait_time) / num_j
+    ave_gpu_req = np.divide(ave_gpu_req, num_jgpu, out=np.zeros_like(ave_gpu_req), where=num_jgpu!=0)
+
+    tot_cpu_hours = tot_cpu_hours / 3600.0
+    tot_gpu_hours = tot_gpu_hours / 3600.0
+
+    print(f"{u},{tot_cpu_hours},{ave_core_use},{ave_cpu_req},{ave_cpu_eff},{ave_mem_use},{ave_mem_req},{ave_mem_eff},{ave_time_use},{ave_time_req},{ave_time_eff},{ave_wait_time},{tot_gpu_hours},{ave_gpu_req}")
