@@ -1,4 +1,4 @@
-k#!/usr/bin/python3
+#!/usr/bin/python3
 
 import sys,os,subprocess,shlex
 import time,datetime
@@ -44,6 +44,7 @@ jobs['MaxRSS'] = jobs.MaxRSS.str.replace('G', '').astype('float')
 jobs['ReqMem'] = jobs.ReqMem.str.replace('G', '').astype('float')
 jobs['TotalCPU'] = jobs.TotalCPU.map(lambda x: time_to_float(x))
 jobs['Elapsed'] = jobs.Elapsed.map(lambda x: time_to_float(x))
+jobs.Timelimit.replace('UNLIMITED','365-00:00:00', inplace=True)
 jobs['Timelimit'] = jobs.Timelimit.map(lambda x: time_to_float(x))
 
 pattern = '%Y-%m-%dT%H:%M:%S'
@@ -115,8 +116,7 @@ for u in users:
         wait_time=start-submit
 
         gpu_req = jobs[(jobs['JobID'] == j) & (jobs['User'] == u)].ReqTRES.to_string(index=False).split(',')
-
-        gpu_req = [s for s in gpu_req if s.startswith('gres/gpu')]
+        gpu_req = [s for s in gpu_req if s.startswith('gres/gpu=')]
         gpu_req = ''.join(gpu_req)
 
         if 'gres/gpu' in gpu_req:
@@ -125,18 +125,18 @@ for u in users:
           ave_gpu_req = ave_gpu_req + float(gpu_req)
           tot_gpu_hours = tot_gpu_hours + float(gpu_req) * time_use
 
-      tot_cpu_hours = tot_cpu_hours + cpu_req * time_use
+        tot_cpu_hours = tot_cpu_hours + cpu_req * time_use
 
-      ave_core_use = ave_core_use + cores_use
-      ave_cpu_req = ave_cpu_req + cpu_req
-      ave_cpu_eff = ave_cpu_eff + cpu_eff
-      ave_mem_use = ave_mem_use + mem_use
-      ave_mem_req = ave_mem_req + mem_req
-      ave_mem_eff = ave_mem_eff + mem_eff
-      ave_time_use = ave_time_use + time_use
-      ave_time_req = ave_time_req + time_req
-      ave_time_eff = ave_time_eff + time_eff
-      ave_wait_time = ave_wait_time + wait_time
+        ave_core_use = ave_core_use + cores_use
+        ave_cpu_req = ave_cpu_req + cpu_req
+        ave_cpu_eff = ave_cpu_eff + cpu_eff
+        ave_mem_use = ave_mem_use + mem_use
+        ave_mem_req = ave_mem_req + mem_req
+        ave_mem_eff = ave_mem_eff + mem_eff
+        ave_time_use = ave_time_use + time_use
+        ave_time_req = ave_time_req + time_req
+        ave_time_eff = ave_time_eff + time_eff
+        ave_wait_time = ave_wait_time + wait_time
 
     # Computing Results
     ntot = nca + ncd + nf + noom + nto
