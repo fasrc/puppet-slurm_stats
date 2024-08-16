@@ -51,8 +51,6 @@ jobs.Start.replace('None','1970-01-02T00:00:00', inplace=True)
 jobs['Submit'] = jobs.Submit.map(lambda x: int(time.mktime(time.strptime(x, pattern))))
 jobs['Start'] = jobs.Start.map(lambda x: int(time.mktime(time.strptime(x, pattern))))
 
-print(jobs)
-
 users = jobs['User'].unique()
 
 for u in users:
