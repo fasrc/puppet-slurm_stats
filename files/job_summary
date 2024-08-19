@@ -3,10 +3,8 @@
 import sys,os,subprocess,shlex
 import time,datetime
 from os import path
-import pandas as pd
-import numpy as np
-from io import StringIO
 from datetime import date
+import numpy as np
 
 def time_to_float(time):
     """ converts [dd-[hh:]]mm:ss time to seconds """
@@ -27,138 +25,175 @@ def time_to_float(time):
 
     return days + hours + mins + secs
 
-d = date.today()-datetime.timedelta(1)
+#Initial Settings
+User = ""
+num_j = {}
+num_jgpu = {}
+tot_cpu_hours = {}
+tot_gpu_hours = {}
+ave_core_use = {}
+ave_cpu_req = {}
+ave_cpu_eff = {}
+ave_mem_use = {}
+ave_mem_req = {}
+ave_mem_eff = {}
+ave_time_use = {}
+ave_time_req = {}
+ave_time_eff = {}
+ave_wait_time = {}
+ave_gpu_req = {}
 
-q = f'sacct -aP --units=G --format=User,JobID,Elapsed,ReqMem,ReqCPUS,Timelimit,State,TotalCPU,MaxRSS,Submit,Start,ReqTRES --state=CA,CD,F,OOM,TO -S {d}T00:00:00 -E {d}T23:59:59'
-res = subprocess.check_output([q], shell=True)
-res = str(res, 'utf-8')
-jobs = pd.read_csv(StringIO(res), sep='|', skipinitialspace=True)
-jobs = jobs.fillna(0.)
+nca = {}
+ncd = {}
+nf = {}
+noom = {}
+nto = {}
 
-jobs['MaxRSS'] = jobs.MaxRSS.astype('str')
-jobs['ReqMem'] = jobs.ReqMem.astype('str')
-jobs['ReqTRES'] = jobs.ReqTRES.astype('str')
+try:
+  # Grab data from slurm
+  proc = subprocess.Popen(
+    'sacct -anP --units=G --format=User,Elapsed,ReqMem,ReqCPUS,Timelimit,State,TotalCPU,MaxRSS,Submit,Start,ReqTRES --state=CA,CD,F,OOM,TO -S {d}T00:00:00 -E {d}T23:59:59'.format(
+      d = date.today()-datetime.timedelta(1)
+    ).split(),
+    stdout=subprocess.PIPE,
+    universal_newlines=True
+  )
+except Exception:
+  self.log.exception("error occured fetching job hash")
+  exit
+else:
+  for line in proc.stdout:
+    # Split out data
+    (LUser, LElapsed, LReqMem, LReqCPUS, LTimelimit, LState, LTotalCPU, LMaxRSS, LSubmit, LStart, LReqTRES) = line.strip().split('|')
+    if LUser != "":
+      # If this the start of a new Job permanently store data
+      if User != "":
+        ave_mem_use[User] = ave_mem_use[User] + MaxRSS
+        ave_mem_req[User] = ave_mem_req[User] + ReqMem
+        ave_mem_eff[User] = ave_mem_eff[User] + np.divide(MaxRSS, ReqMem, out=np.zeros_like(MaxRSS), where=ReqMem!=0)
 
-jobs['JobID'] = jobs.JobID.map(lambda x: x.split('.')[0])
-jobs['MaxRSS'] = jobs.MaxRSS.str.replace('G', '').astype('float')
-jobs['ReqMem'] = jobs.ReqMem.str.replace('G', '').astype('float')
-jobs['TotalCPU'] = jobs.TotalCPU.map(lambda x: time_to_float(x))
-jobs['Elapsed'] = jobs.Elapsed.map(lambda x: time_to_float(x))
-jobs.Timelimit.replace('UNLIMITED','365-00:00:00', inplace=True)
-jobs['Timelimit'] = jobs.Timelimit.map(lambda x: time_to_float(x))
+      #Data
+      User=LUser
 
-pattern = '%Y-%m-%dT%H:%M:%S'
-jobs.Start.replace('None','1970-01-02T00:00:00', inplace=True)
-jobs['Submit'] = jobs.Submit.map(lambda x: int(time.mktime(time.strptime(x, pattern))))
-jobs['Start'] = jobs.Start.map(lambda x: int(time.mktime(time.strptime(x, pattern))))
+      #Initialize Counters
+      if User not in nca:
+        num_j[User] = 0
+        num_jgpu[User] = 0
+        tot_cpu_hours[User] = 0.
+        tot_gpu_hours[User] = 0.
+        ave_core_use[User] = 0.
+        ave_cpu_req[User] = 0.
+        ave_cpu_eff[User] = 0.
+        ave_mem_use[User] = 0.
+        ave_mem_req[User] = 0.
+        ave_mem_eff[User] = 0.
+        ave_time_use[User] = 0.
+        ave_time_req[User] = 0.
+        ave_time_eff[User] = 0.
+        ave_wait_time[User] = 0.
+        ave_gpu_req[User] = 0.
+        nca[User] = 0
+        ncd[User] = 0
+        nf[User] = 0
+        noom[User] = 0
+        nto[User] = 0
 
-users = jobs['User'].unique()
+      # Job State Counters
+      if 'CANCELLED' in LState:
+        nca[User] = nca[User] + 1
+      elif 'COMPLETED' in LState:
+        ncd[User] = ncd[User] + 1
+      elif 'FAILED' in LState:
+        nf[User] = nf[User] + 1
+      elif 'MEMORY' in LState:
+        noom[User] = noom[User] + 1
+      elif 'PREEMPTED' in LState:
+        npr[User] = npr[User] + 1
+      elif 'TIME' in LState:
+        nto[User] = nto[User] + 1
 
-for u in users:
-  if u != 0.0:
-    jobids = jobs[jobs['User'] == u].JobID
+      if 'CANCELLED' not in LState:
+        # Job Count
+        num_j[User] = num_j[User] +1
 
-    num_j = 0
-    num_jgpu = 0
+        # Converting into appropriate units
+        ReqCPUS = float(LReqCPUS)
+        ReqMem = LReqMem
+        Elapsed = LElapsed
+        TotalCPU = LTotalCPU
+        Timelimit = LTimelimit
+        Submit = LSubmit
+        Start = LStart
+        ReqTRES = LReqTRES
+        MaxRSS = 0.
 
-    tot_cpu_hours = 0.
-    tot_gpu_hours = 0.
-    ave_core_use = 0.
-    ave_cpu_req = 0.
-    ave_cpu_eff = 0.
-    ave_mem_use = 0.
-    ave_mem_req = 0.
-    ave_mem_eff = 0.
-    ave_time_use = 0.
-    ave_time_req = 0.
-    ave_time_eff = 0.
-    ave_wait_time = 0
-    ave_gpu_req = 0.
+        ReqMem = float(ReqMem.replace('G', ''))
 
-    nca = 0
-    ncd = 0
-    nf = 0
-    noom = 0
-    nto = 0
+        TotalCPU = time_to_float(TotalCPU)
+        Elapsed = time_to_float(Elapsed)
+        Timelimit = time_to_float(Timelimit.replace('UNLIMITED','365-00:00:00'))
 
-    for j in jobids:
-      state = jobs[(jobs['JobID'] == j) & (jobs['User'] == u)].State.to_string(index=False)
+        pattern = '%Y-%m-%dT%H:%M:%S'
+        Submit = int(time.mktime(time.strptime(Submit, pattern)))
+        Start = int(time.mktime(time.strptime(Start.replace('None','1970-01-02T00:00:00'), pattern)))
 
-      if 'CANCELLED' in state:
-        nca = nca + 1
-      elif 'COMPLETED' in state:
-        ncd = ncd + 1
-      elif 'FAILED' in state:
-        nf = nf + 1
-      elif 'MEMORY' in state:
-        noom = noom + 1
-      elif 'PREEMPTED' in state:
-        npr = npr + 1
-      elif 'TIME' in state:
-        nto = nto + 1
+        cpu_eff = np.divide(np.divide(TotalCPU, Elapsed, out=np.zeros_like(TotalCPU), where=Elapsed!=0), ReqCPUS)
 
-      if 'CANCELLED' not in state:
-        num_j = num_j + 1
-        cpu_use = np.max(jobs[jobs['JobID'] == j].TotalCPU)
-        cpu_req = np.max(jobs[jobs['JobID'] == j].ReqCPUS)
-        time_use = np.max(jobs[jobs['JobID'] == j].Elapsed)
-        time_req = np.max(jobs[jobs['JobID'] == j].Timelimit)
-        mem_use = np.max(jobs[jobs['JobID'] == j].MaxRSS)
-        mem_req = np.max(jobs[jobs['JobID'] == j].ReqMem)
-        cpu_eff = np.divide(np.divide(cpu_use, time_use, out=np.zeros_like(cpu_use), where=time_use!=0), cpu_req)
-        mem_eff = np.divide(mem_use, mem_req, out=np.zeros_like(mem_use), where=mem_req!=0)
-        time_eff = np.divide(time_use, time_req, out=np.zeros_like(time_use), where=time_req!=0)
-
-        cores_use = cpu_eff * cpu_req
-
-        submit = np.min(jobs[jobs['JobID'] == j].Submit)
-        start = np.min(jobs[jobs['JobID'] == j].Start)
-        wait_time=start-submit
-
-        gpu_req = jobs[(jobs['JobID'] == j) & (jobs['User'] == u)].ReqTRES.to_string(index=False).split(',')
+        # Checking if there is a GPU
+        gpu_req = ReqTRES.split(',')
         gpu_req = [s for s in gpu_req if s.startswith('gres/gpu=')]
         gpu_req = ''.join(gpu_req)
 
         if 'gres/gpu' in gpu_req:
-          num_jgpu = num_jgpu + 1
+          num_jgpu[User] = num_jgpu[User] + 1
           gpu_req = gpu_req.replace('gres/gpu=', '')
-          ave_gpu_req = ave_gpu_req + float(gpu_req)
-          tot_gpu_hours = tot_gpu_hours + float(gpu_req) * time_use
+          ave_gpu_req[User] = ave_gpu_req[User] + float(gpu_req)
+          tot_gpu_hours[User] = tot_gpu_hours[User] + float(gpu_req) * Elapsed
 
-        tot_cpu_hours = tot_cpu_hours + cpu_req * time_use
+        # Storing Results
+        tot_cpu_hours[User] = tot_cpu_hours[User] + ReqCPUS * Elapsed
+        ave_core_use[User] = ave_core_use[User] + ReqCPUS * cpu_eff
+        ave_cpu_req[User] = ave_cpu_req[User] + ReqCPUS
+        ave_time_use[User] = ave_time_use[User] + Elapsed
+        ave_time_req[User] = ave_time_req[User] + Timelimit
+        ave_cpu_eff[User] = ave_cpu_eff[User] + cpu_eff
+        ave_time_req[User] = ave_time_eff[User] + np.divide(Elapsed, Timelimit, out=np.zeros_like(Elapsed), where=Timelimit!=0)
+        ave_wait_time[User] = ave_wait_time[User] + (float(Start) - float(Submit))
+    else:
+      # Checking for maximum memory in job steps
+      if LMaxRSS != "":
+        MaxRSS = max(MaxRSS,float(LMaxRSS.replace('G', '')))
 
-        ave_core_use = ave_core_use + cores_use
-        ave_cpu_req = ave_cpu_req + cpu_req
-        ave_cpu_eff = ave_cpu_eff + cpu_eff
-        ave_mem_use = ave_mem_use + mem_use
-        ave_mem_req = ave_mem_req + mem_req
-        ave_mem_eff = ave_mem_eff + mem_eff
-        ave_time_use = ave_time_use + time_use
-        ave_time_req = ave_time_req + time_req
-        ave_time_eff = ave_time_eff + time_eff
-        ave_wait_time = ave_wait_time + wait_time
+  # Fill in last job
+  ave_mem_use[User] = ave_mem_use[User] + MaxRSS
+  ave_mem_req[User] = ave_mem_req[User] + ReqMem
+  ave_mem_eff[User] = ave_mem_eff[User] + np.divide(MaxRSS, ReqMem, out=np.zeros_like(MaxRSS), where=ReqMem!=0)
 
-    # Computing Results
-    ntot = nca + ncd + nf + noom + nto
-    num_j = float(max(num_j,1))
-    num_jgpu = float(max(num_jgpu,1))
+for user in nca:
+  # Totals and Averages
+  ntot = nca[user] + ncd[user] + nf[user] + noom[user] + nto[user]
 
-    ave_core_use = ave_core_use / num_j
-    ave_cpu_req = ave_cpu_req / num_j
-    ave_cpu_eff = ave_cpu_eff * 100 / num_j
-    ave_mem_use = ave_mem_use / num_j
-    ave_mem_req = ave_mem_req / num_j
-    ave_mem_eff = ave_mem_eff * 100  / num_j
-    ave_time_use = ave_time_use / num_j
-    ave_time_req = ave_time_req / num_j
-    ave_time_eff = ave_time_eff *100 / num_j
-    ave_wait_time = float(ave_wait_time) / num_j
-    ave_gpu_req = ave_gpu_req / num_jgpu
+  num_j[user] = float(max(num_j[user],1))
+  num_jgpu[user] = float(max(num_jgpu[user],1))
 
-    ave_time_use = ave_time_use / 3600.0
-    ave_time_req = ave_time_req / 3600.0
-    ave_wait_time = ave_wait_time / 3600.0
-    tot_cpu_hours = tot_cpu_hours / 3600.0
-    tot_gpu_hours = tot_gpu_hours / 3600.0
+  ave_core_use[user] = ave_core_use[user] / num_j[user]
+  ave_cpu_req[user] = ave_cpu_req[user] / num_j[user]
+  ave_cpu_eff[user] = ave_cpu_eff[user] * 100 / num_j[user]
+  ave_mem_use[user] = ave_mem_use[user] / num_j[user]
+  ave_mem_req[user] = ave_mem_req[user] / num_j[user]
+  ave_mem_eff[user] = ave_mem_eff[user] * 100  / num_j[user]
+  ave_time_use[user] = ave_time_use[user] / num_j[user]
+  ave_time_req[user] = ave_time_req[user] / num_j[user]
+  ave_time_eff[user] = ave_time_eff[user] * 100 / num_j[user]
+  ave_wait_time[user] = ave_wait_time[user] / num_j[user]
+  ave_gpu_req[user] = ave_gpu_req[user] / num_jgpu[user]
 
-    print(f"{u},{tot_cpu_hours:.2f},{ave_core_use:.1f},{ave_cpu_req:.1f},{ave_cpu_eff:.1f},{ave_mem_use:.1f},{ave_mem_req:.1f},{ave_mem_eff:.1f},{ave_time_use:.2f},{ave_time_req:.2f},{ave_time_eff:.1f},{ave_wait_time:.2f},{tot_gpu_hours:.2f},{ave_gpu_req:.1f},{ntot},{nca},{ncd},{nf},{noom},{nto}")
+  #Normalize Time to Hours
+  ave_time_use[user] = ave_time_use[user] / 3600.0
+  ave_time_req[user] = ave_time_req[user] / 3600.0
+  ave_wait_time[user] = ave_wait_time[user] / 3600.0
+  tot_cpu_hours[user] = tot_cpu_hours[user] / 3600.0
+  tot_gpu_hours[user] = tot_gpu_hours[user] / 3600.0
+
+  # Dumping Data
+  print(f"{user},{tot_cpu_hours[user]:.2f},{ave_core_use[user]:.1f},{ave_cpu_req[user]:.1f},{ave_cpu_eff[user]:.1f},{ave_mem_use[user]:.1f},{ave_mem_req[user]:.1f},{ave_mem_eff[user]:.1f},{ave_time_use[user]:.2f},{ave_time_req[user]:.2f},{ave_time_eff[user]:.1f},{ave_wait_time[user]:.2f},{tot_gpu_hours[user]:.2f},{ave_gpu_req[user]:.1f},{ntot},{nca[user]},{ncd[user]},{nf[user]},{noom[user]},{nto[user]}")
