@@ -1,7 +1,7 @@
 # slurm_stats::login sets up a login node to print out slurm statistics on user login
 class slurm_stats::login (
   String  $data_store = '/slurm/etc/slurm',
-  Integer $cronhour   = 3,
+  Integer $cronhour   = 1,
   Integer $cronmin    = 0,
 ){
 

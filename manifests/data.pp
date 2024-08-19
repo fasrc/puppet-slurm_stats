@@ -13,6 +13,13 @@ class slurm_stats::data (
     mode    => '0755',
   }
 
+  file {'/usr/local/sbin/job_summary':
+    source  => 'puppet:///modules/slurm_stats/job_summary',
+    owner   => 'root',
+    group   => 'root',
+    mode    => '0755',
+  }
+
   cron { 'slurm_stats':
     command => '/usr/local/sbin/slurm_stats',
     user    => 'root',

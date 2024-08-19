@@ -4,3 +4,5 @@
 /usr/bin/date -d "yesterday" '+%B %d' > <%= @data_store %>/slurm_stats_fairshare.txt
 # Pull fairshare data
 /usr/bin/sshare -n --parsable2 -a -o "User,Account,Fairshare" | sort | tr -d ' ' >> <%= @data_store %>/slurm_stats_fairshare.txt
+# Pull job data
+/usr/local/sbin/job_summary > <%= @data_store %>/slurm_stats_summary.txt
