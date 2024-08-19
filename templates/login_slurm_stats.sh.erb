@@ -2,6 +2,7 @@
 
 date=$(head -n 1 /usr/local/share/slurm_stats/slurm_stats_fairshare.txt)
 fair=$(grep "${USER}|" /usr/local/share/slurm_stats/slurm_stats_fairshare.txt)
+js=$(grep "${USER}," /usr/local/share/slurm_stats/slurm_stats_summary.txt)
 
 if [ -n "$fair" ]
 then
@@ -16,9 +17,29 @@ then
   done
   echo "${fairshare}"
 
-  echo "Core Usage: 500 CPU Hours | Average Number of Cores Used: 1 Allocated: 4 | CPU Efficiency: 50%"
-  echo "Average Memory Used: 4GB Allocated: 8GB | Memory Efficiency: 50%"
-  echo "GPU Usage: 60 GPU Hours | Average Number of GPUs Used: 0"
-  echo "Jobs by State: 4000 Total | 300 Completed | 400 Canceled | 500 Failed | 3000 Out of Memory"
-  echo "Average Job Wait Time: 5 hours | Average Job Run Time: 1 day"
+  if [ -n "$js ]
+    tot_cpu_hours=$(echo ${i} | cut -d ',' -f 2)
+    ave_core_use=$(echo ${i} | cut -d ',' -f 3)
+    ave_cpu_req=$(echo ${i} | cut -d ',' -f 4)
+    ave_cpu_eff=$(echo ${i} | cut -d ',' -f 5)
+    ave_mem_use=$(echo ${i} | cut -d ',' -f 6)
+    ave_mem_req=$(echo ${i} | cut -d ',' -f 7)
+    ave_mem_eff=$(echo ${i} | cut -d ',' -f 8)
+    ave_time_use=$(echo ${i} | cut -d ',' -f 9)
+    ave_time_req=$(echo ${i} | cut -d ',' -f 10)
+    ave_time_eff=$(echo ${i} | cut -d ',' -f 11)
+    ave_wait_time=$(echo ${i} | cut -d ',' -f 12)
+    tot_gpu_hours=$(echo ${i} | cut -d ',' -f 13)
+    ave_gpu_req=$(echo ${i} | cut -d ',' -f 14)
+    ntot=$(echo ${i} | cut -d ',' -f 15)
+    nca=$(echo ${i} | cut -d ',' -f 16)
+    ncd=$(echo ${i} | cut -d ',' -f 17)
+    nf=$(echo ${i} | cut -d ',' -f 18)
+    noom=$(echo ${i} | cut -d ',' -f 19)
+    nto=$(echo ${i} | cut -d ',' -f 20)
+    echo "Core Usage: ${tot_cpu_hours} CPU Hours | Average Number of Cores Used: ${ave_core_use} Allocated: ${ave_cpu_req} | CPU Efficiency: ${ave_cpu_eff}%"
+    echo "Average Memory Used: ${ave_mem_use}GB Allocated: ${ave_mem_req}GB | Memory Efficiency: ${ave_mem_eff}%"
+    echo "GPU Usage: ${tot_gpu_hours} GPU Hours | Average Number of GPUs Used: ${ave_gpu_req}"
+    echo "Jobs by State: ${ntot} Total | ${ncd} Completed | ${nca} Canceled | ${nf} Failed | ${noom} Out of Memory | ${nto} Timed Out"
+    echo "Average Job Wait Time: ${ave_wait_time} hours | Average Job Run Time: ${ave_time_use hours} | Requested: ${ave_time_req} | Time Efficiency: ${ave_time_eff}%"
 fi
