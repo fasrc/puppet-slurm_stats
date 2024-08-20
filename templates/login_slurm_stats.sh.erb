@@ -1,8 +1,15 @@
 #/bin/bash
 
-date=$(head -n 1 /usr/local/share/slurm_stats/slurm_stats_fairshare.txt)
-fair=$(grep "${USER}|" /usr/local/share/slurm_stats/slurm_stats_fairshare.txt)
-js=$(grep "${USER}," /usr/local/share/slurm_stats/slurm_stats_summary.txt)
+if [ -f /usr/local/share/slurm_stats/slurm_stats_fairshare.txt ];
+then
+  date=$(head -n 1 /usr/local/share/slurm_stats/slurm_stats_fairshare.txt)
+  fair=$(grep "${USER}|" /usr/local/share/slurm_stats/slurm_stats_fairshare.txt)
+  js=$(grep "${USER}," /usr/local/share/slurm_stats/slurm_stats_summary.txt)
+else
+  date=""
+  fair=""
+  js=""
+fi
 
 if [ -n "$fair" ]
 then
