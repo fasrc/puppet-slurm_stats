@@ -17,7 +17,8 @@ then
   done
   echo "${fairshare}"
 
-  if [ -n "$js ]
+  if [ -n "$js" ]
+  then
     tot_cpu_hours=$(echo ${js} | cut -d ',' -f 2)
     ave_core_use=$(echo ${js} | cut -d ',' -f 3)
     ave_cpu_req=$(echo ${js} | cut -d ',' -f 4)
@@ -42,4 +43,5 @@ then
     echo "GPU Usage: ${tot_gpu_hours} GPU Hours | Average Number of GPUs Used: ${ave_gpu_req}"
     echo "Jobs by State: ${ntot} Total | ${ncd} Completed | ${nca} Canceled | ${nf} Failed | ${noom} Out of Memory | ${nto} Timed Out"
     echo "Average Job Wait Time: ${ave_wait_time} hours | Average Job Run Time: ${ave_time_use hours} | Requested: ${ave_time_req} | Time Efficiency: ${ave_time_eff}%"
+  fi
 fi
