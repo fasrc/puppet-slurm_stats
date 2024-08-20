@@ -157,7 +157,7 @@ else:
         ave_time_use[User] = ave_time_use[User] + Elapsed
         ave_time_req[User] = ave_time_req[User] + Timelimit
         ave_cpu_eff[User] = ave_cpu_eff[User] + cpu_eff
-        ave_time_req[User] = ave_time_eff[User] + np.divide(Elapsed, Timelimit, out=np.zeros_like(Elapsed), where=Timelimit!=0)
+        ave_time_eff[User] = ave_time_eff[User] + np.divide(Elapsed, Timelimit, out=np.zeros_like(Elapsed), where=Timelimit!=0)
         ave_wait_time[User] = ave_wait_time[User] + (float(Start) - float(Submit))
     else:
       # Checking for maximum memory in job steps
