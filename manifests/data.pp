@@ -2,7 +2,7 @@
 class slurm_stats::data (
   String  $data_store = '/slurm/etc/slurm',
   Integer $cronhour   = 0,
-  Integer $cronmin    = 30,
+  Integer $cronmin    = 45,
 ){
   ensure_packages(['python3-numpy'], {'ensure' => present})
 
