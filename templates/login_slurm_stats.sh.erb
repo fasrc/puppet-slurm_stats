@@ -8,14 +8,13 @@ if [ -n "$fair" ]
 then
   echo ""
   echo "+---------------- Slurm Stats for ${date} -----------------------+"
-  fairshare="End of Day Fairshare |"
+  echo "| End of Day Fairshare                                           |" 
   for i in $fair
   do
     account=$(echo ${i} | cut -d '|' -f 2)
     score=$(echo ${i} | cut -d '|' -f 3)
-    fairshare="${fairshare} ${account}: ${score} |"
+    print "| %30s: %8s                           |\n" ${account} ${score}
   done
-  echo "${fairshare}"
 
   if [ -n "$js" ]
   then
@@ -38,13 +37,20 @@ then
     nf=$(echo ${js} | cut -d ',' -f 18)
     noom=$(echo ${js} | cut -d ',' -f 19)
     nto=$(echo ${js} | cut -d ',' -f 20)
-    echo "Jobs by State: ${ntot} Total | ${ncd} Completed | ${nca} Canceled | ${nf} Failed | ${noom} Out of Memory | ${nto} Timed Out"
-    echo "All Values Averaged Over the Day Unless Otherwise Noted"
-    echo "Cores Used: ${ave_core_use} | Allocated: ${ave_cpu_req} | Efficiency: ${ave_cpu_eff}% | Total Usage: ${tot_cpu_hours} CPU Hours"
-    echo "Memory Used: ${ave_mem_use}GB | Allocated: ${ave_mem_req}GB | Efficiency: ${ave_mem_eff}%"
-    echo "GPUs Used: ${ave_gpu_req} | Total Usage: ${tot_gpu_hours} GPU Hours" 
-    echo "Wait Time: ${ave_wait_time} hours | Run Time: ${ave_time_use} hours | Requested: ${ave_time_req} | Efficiency: ${ave_time_eff}%"
+    echo "+---------------- Slurm Stats for Aug 19 -----------------------+"
+    echo "+-------------------- Jobs By State ----------------------------+"
+    echo "| Total | Completed | Canceled | Failed | Out of Memory | Timed Out |"
+    printf "| %6d | %6d | %6d | %6d | %6d | %6d |\n" ${ntot} ${ncd} ${nca} ${nf} ${noom} ${nto}
+    echo "+---------------------- Job Stats ------------------------------+"
+    echo "|     | Average | Average   | Average           | Total Usage /     |"
+    echo "|     | Used    | Allocated | Efficiency        | Ave. Wait Time    |"
+    printf "| Cores  | %6s | %6s | %6s \% | %6s CPU Hours |\n" ${ave_core_use} ${ave_cpu_req} ${ave_cpu_eff} ${tot_cpu_hours}
+    printf "| Memory | %6s GB | %6s GB | %6s \% |       |\n" ${ave_mem_use} ${ave_mem_req} ${ave_mem_eff}
+    printf "| GPUS   |    | %6s |    | %6s GPU Hours      |\n" ${ave_gpu_req} ${tot_gpu_hours} 
+    printf "| Time   | %6s hrs | %6s hrs | %6s \% | Wait Time: %6s |\n" ${ave_time_use} ${ave_time_req} ${ave_time_eff} ${ave_wait_time}
+    echo "+---------------------------------------------------------------+"
   else
-    echo "No jobs completed on ${date}"
+    echo "+--------------- No jobs completed on ${date} ------------------+"
   fi
 fi
+
