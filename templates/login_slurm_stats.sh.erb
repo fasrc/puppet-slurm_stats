@@ -38,10 +38,12 @@ then
     nf=$(echo ${js} | cut -d ',' -f 18)
     noom=$(echo ${js} | cut -d ',' -f 19)
     nto=$(echo ${js} | cut -d ',' -f 20)
-    echo "Core Usage: ${tot_cpu_hours} CPU Hours | Average Number of Cores Used: ${ave_core_use} Allocated: ${ave_cpu_req} | CPU Efficiency: ${ave_cpu_eff}%"
-    echo "Average Memory Used: ${ave_mem_use}GB Allocated: ${ave_mem_req}GB | Memory Efficiency: ${ave_mem_eff}%"
-    echo "GPU Usage: ${tot_gpu_hours} GPU Hours | Average Number of GPUs Used: ${ave_gpu_req}"
     echo "Jobs by State: ${ntot} Total | ${ncd} Completed | ${nca} Canceled | ${nf} Failed | ${noom} Out of Memory | ${nto} Timed Out"
-    echo "Average Job Wait Time: ${ave_wait_time} hours | Average Job Run Time: ${ave_time_use} hours | Requested: ${ave_time_req} | Time Efficiency: ${ave_time_eff}%"
+    echo "Core Usage: ${tot_cpu_hours} CPU Hours | Average Used: ${ave_core_use} | Average Allocated: ${ave_cpu_req} | Efficiency: ${ave_cpu_eff}%"
+    echo "Average Memory Used: ${ave_mem_use}GB | Allocated: ${ave_mem_req}GB | Efficiency: ${ave_mem_eff}%"
+    echo "GPU Usage: ${tot_gpu_hours} GPU Hours | Average Used: ${ave_gpu_req}"
+    echo "Average Wait Time: ${ave_wait_time} hours | Average Run Time: ${ave_time_use} hours | Average Requested: ${ave_time_req} | Efficiency: ${ave_time_eff}%"
+  else
+    echo "No jobs completed on ${date}"
   fi
 fi
