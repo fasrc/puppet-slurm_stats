@@ -3,7 +3,7 @@
 if [ -f /usr/local/share/slurm_stats/slurm_stats_fairshare.txt ]
 then
   date=$(head -n 1 /usr/local/share/slurm_stats/slurm_stats_fairshare.txt)
-  fair=$(grep "${USER}|" /usr/local/share/slurm_stats/slurm_stats_fairshare.txt)
+  fair=$(grep "^${USER}|" /usr/local/share/slurm_stats/slurm_stats_fairshare.txt)
 else
   date=""
   fair=""
@@ -11,7 +11,7 @@ fi
 
 if [ -f /usr/local/share/slurm_stats/slurm_stats_summary.txt ]
 then
- js=$(grep "${USER}," /usr/local/share/slurm_stats/slurm_stats_summary.txt)
+ js=$(grep "^${USER}," /usr/local/share/slurm_stats/slurm_stats_summary.txt)
 else
  js=""
 fi
