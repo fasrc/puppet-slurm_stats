@@ -52,7 +52,7 @@ nto = {}
 try:
   # Grab data from slurm
   proc = subprocess.Popen(
-    'sacct -anP --units=G --format=User,Elapsed,ReqMem,ReqCPUS,Timelimit,State,TotalCPU,MaxRSS,Submit,Start,ReqTRES --state=CA,CD,F,OOM,TO -S {d}T00:00:00 -E {d}T23:59:59'.format(
+    'sacct -anP --units=G --format=User,Elapsed,ReqMem,AllocCPUS,Timelimit,State,TotalCPU,MaxRSS,Submit,Start,ReqTRES --state=CA,CD,F,OOM,TO -S {d}T00:00:00 -E {d}T23:59:59'.format(
       d = date.today()-datetime.timedelta(1)
     ).split(),
     stdout=subprocess.PIPE,
@@ -64,7 +64,7 @@ except Exception:
 else:
   for line in proc.stdout:
     # Split out data
-    (LUser, LElapsed, LReqMem, LReqCPUS, LTimelimit, LState, LTotalCPU, LMaxRSS, LSubmit, LStart, LReqTRES) = line.strip().split('|')
+    (LUser, LElapsed, LReqMem, LAllocCPUS, LTimelimit, LState, LTotalCPU, LMaxRSS, LSubmit, LStart, LReqTRES) = line.strip().split('|')
     if LUser != "":
       # If this the start of a new Job permanently store data
       if User != "" and 'CANCELLED' not in State:
@@ -118,7 +118,7 @@ else:
         num_j[User] = num_j[User] + 1
 
         # Converting into appropriate units
-        ReqCPUS = float(LReqCPUS)
+        AllocCPUS = float(LAllocCPUS)
         ReqMem = LReqMem
         Elapsed = LElapsed
         TotalCPU = LTotalCPU
@@ -138,7 +138,7 @@ else:
         Submit = int(time.mktime(time.strptime(Submit, pattern)))
         Start = int(time.mktime(time.strptime(Start.replace('None','1970-01-02T00:00:00'), pattern)))
 
-        cpu_eff = np.divide(np.divide(TotalCPU, Elapsed, out=np.zeros_like(TotalCPU), where=Elapsed!=0), ReqCPUS)
+        cpu_eff = np.divide(np.divide(TotalCPU, Elapsed, out=np.zeros_like(TotalCPU), where=Elapsed!=0), AllocCPUS)
 
         # Checking if there is a GPU
         gpu_req = ReqTRES.split(',')
@@ -152,9 +152,9 @@ else:
           tot_gpu_hours[User] = tot_gpu_hours[User] + float(gpu_req) * Elapsed
 
         # Storing Results
-        tot_cpu_hours[User] = tot_cpu_hours[User] + ReqCPUS * Elapsed
-        ave_core_use[User] = ave_core_use[User] + ReqCPUS * cpu_eff
-        ave_cpu_req[User] = ave_cpu_req[User] + ReqCPUS
+        tot_cpu_hours[User] = tot_cpu_hours[User] + AllocCPUS * Elapsed
+        ave_core_use[User] = ave_core_use[User] + AllocCPUS * cpu_eff
+        ave_cpu_req[User] = ave_cpu_req[User] + AllocCPUS
         ave_time_use[User] = ave_time_use[User] + Elapsed
         ave_time_req[User] = ave_time_req[User] + Timelimit
         ave_cpu_eff[User] = ave_cpu_eff[User] + cpu_eff
