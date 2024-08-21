@@ -67,13 +67,14 @@ else:
     (LUser, LElapsed, LReqMem, LReqCPUS, LTimelimit, LState, LTotalCPU, LMaxRSS, LSubmit, LStart, LReqTRES) = line.strip().split('|')
     if LUser != "":
       # If this the start of a new Job permanently store data
-      if User != "":
+      if User != "" and 'CANCELLED' not in State:
         ave_mem_use[User] = ave_mem_use[User] + MaxRSS
         ave_mem_req[User] = ave_mem_req[User] + ReqMem
         ave_mem_eff[User] = ave_mem_eff[User] + np.divide(MaxRSS, ReqMem, out=np.zeros_like(MaxRSS), where=ReqMem!=0)
 
       #Data
       User=LUser
+      State=LState
 
       #Initialize Counters
       if User not in nca:
@@ -99,20 +100,20 @@ else:
         nto[User] = 0
 
       # Job State Counters
-      if 'CANCELLED' in LState:
+      if 'CANCELLED' in State:
         nca[User] = nca[User] + 1
-      elif 'COMPLETED' in LState:
+      elif 'COMPLETED' in State:
         ncd[User] = ncd[User] + 1
-      elif 'FAILED' in LState:
+      elif 'FAILED' in State:
         nf[User] = nf[User] + 1
-      elif 'MEMORY' in LState:
+      elif 'MEMORY' in State:
         noom[User] = noom[User] + 1
-      elif 'PREEMPTED' in LState:
+      elif 'PREEMPTED' in State:
         npr[User] = npr[User] + 1
-      elif 'TIME' in LState:
+      elif 'TIME' in State:
         nto[User] = nto[User] + 1
 
-      if 'CANCELLED' not in LState:
+      if 'CANCELLED' not in State:
         # Job Count
         num_j[User] = num_j[User] + 1
 
