@@ -49,6 +49,8 @@ nf = {}
 noom = {}
 nto = {}
 
+MaxRSS = 0.
+
 try:
   # Grab data from slurm
   proc = subprocess.Popen(
