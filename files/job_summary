@@ -168,9 +168,10 @@ else:
         MaxRSS = max(MaxRSS,float(LMaxRSS.replace('G', '')))
 
   # Fill in last job
-  ave_mem_use[User] = ave_mem_use[User] + MaxRSS
-  ave_mem_req[User] = ave_mem_req[User] + ReqMem
-  ave_mem_eff[User] = ave_mem_eff[User] + np.divide(MaxRSS, ReqMem, out=np.zeros_like(MaxRSS), where=ReqMem!=0)
+  if 'CANCELLED' not in State:
+    ave_mem_use[User] = ave_mem_use[User] + MaxRSS
+    ave_mem_req[User] = ave_mem_req[User] + ReqMem
+    ave_mem_eff[User] = ave_mem_eff[User] + np.divide(MaxRSS, ReqMem, out=np.zeros_like(MaxRSS), where=ReqMem!=0)
 
 for user in nca:
   # Totals and Averages
