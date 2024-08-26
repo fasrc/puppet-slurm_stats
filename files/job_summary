@@ -43,11 +43,11 @@ ave_time_eff = {}
 ave_wait_time = {}
 ave_gpu_req = {}
 
-nca = {}
-ncd = {}
-nf = {}
-noom = {}
-nto = {}
+nca_cpu = {}
+ncd_cpu = {}
+nf_cpu = {}
+noom_cpu = {}
+nto_cpu = {}
 
 MaxRSS = 0.
 
@@ -79,7 +79,7 @@ else:
       State=LState
 
       #Initialize Counters
-      if User not in nca:
+      if User not in nca_cpu:
         num_j[User] = 0
         num_jgpu[User] = 0
         tot_cpu_hours[User] = 0.
@@ -95,23 +95,40 @@ else:
         ave_time_eff[User] = 0.
         ave_wait_time[User] = 0.
         ave_gpu_req[User] = 0.
-        nca[User] = 0
-        ncd[User] = 0
-        nf[User] = 0
-        noom[User] = 0
-        nto[User] = 0
+        nca_cpu[User] = 0
+        ncd_cpu[User] = 0
+        nf_cpu[User] = 0
+        noom_cpu[User] = 0
+        nto_gpu[User] = 0
+        nca_gpu[User] = 0
+        ncd_gpu[User] = 0
+        nf_gpu[User] = 0
+        noom_gpu[User] = 0
+        nto_gpu[User] = 0
 
       # Job State Counters
-      if 'CANCELLED' in State:
-        nca[User] = nca[User] + 1
-      elif 'COMPLETED' in State:
-        ncd[User] = ncd[User] + 1
-      elif 'FAILED' in State:
-        nf[User] = nf[User] + 1
-      elif 'MEMORY' in State:
-        noom[User] = noom[User] + 1
-      elif 'TIME' in State:
-        nto[User] = nto[User] + 1
+      if 'gres/gpu' in LReqTRES:
+        if 'CANCELLED' in State:
+          nca_gpu[User] = nca_gpu[User] + 1
+        elif 'COMPLETED' in State:
+          ncd_gpu[User] = ncd_gpu[User] + 1
+        elif 'FAILED' in State:
+          nf_gpu[User] = nf_gpu[User] + 1
+        elif 'MEMORY' in State:
+          noom_gpu[User] = noom_gpu[User] + 1
+        elif 'TIME' in State:
+          nto_gpu[User] = nto_gpu[User] + 1
+      else
+        if 'CANCELLED' in State:
+          nca_cpu[User] = nca_cpu[User] + 1
+        elif 'COMPLETED' in State:
+          ncd_cpu[User] = ncd_cpu[User] + 1
+        elif 'FAILED' in State:
+          nf_cpu[User] = nf_cpu[User] + 1
+        elif 'MEMORY' in State:
+          noom_cpu[User] = noom_cpu[User] + 1
+        elif 'TIME' in State:
+          nto_cpu[User] = nto_cpu[User] + 1
 
       if 'CANCELLED' not in State:
         # Job Count
@@ -171,9 +188,10 @@ else:
     ave_mem_req[User] = ave_mem_req[User] + ReqMem
     ave_mem_eff[User] = ave_mem_eff[User] + np.divide(MaxRSS, ReqMem, out=np.zeros_like(MaxRSS), where=ReqMem!=0)
 
-for user in nca:
+for user in nca_cpu:
   # Totals and Averages
-  ntot = nca[user] + ncd[user] + nf[user] + noom[user] + nto[user]
+  ntot_cpu = nca_cpu[user] + ncd_cpu[user] + nf_cpu[user] + noom_cpu[user] + nto_cpu[user]
+  ntot_gpu = nca_gpu[user] + ncd_gpu[user] + nf_gpu[user] + noom_gpu[user] + nto_gpu[user]
 
   num_j[user] = float(max(num_j[user],1))
   num_jgpu[user] = float(max(num_jgpu[user],1))
@@ -198,4 +216,4 @@ for user in nca:
   tot_gpu_hours[user] = tot_gpu_hours[user] / 3600.0
 
   # Dumping Data
-  print(f"{user},{tot_cpu_hours[user]:.2f},{ave_core_use[user]:.1f},{ave_cpu_req[user]:.1f},{ave_cpu_eff[user]:.1f},{ave_mem_use[user]:.1f},{ave_mem_req[user]:.1f},{ave_mem_eff[user]:.1f},{ave_time_use[user]:.2f},{ave_time_req[user]:.2f},{ave_time_eff[user]:.1f},{ave_wait_time[user]:.2f},{tot_gpu_hours[user]:.2f},{ave_gpu_req[user]:.1f},{ntot},{nca[user]},{ncd[user]},{nf[user]},{noom[user]},{nto[user]}")
+  print(f"{user},{tot_cpu_hours[user]:.2f},{ave_core_use[user]:.1f},{ave_cpu_req[user]:.1f},{ave_cpu_eff[user]:.1f},{ave_mem_use[user]:.1f},{ave_mem_req[user]:.1f},{ave_mem_eff[user]:.1f},{ave_time_use[user]:.2f},{ave_time_req[user]:.2f},{ave_time_eff[user]:.1f},{ave_wait_time[user]:.2f},{tot_gpu_hours[user]:.2f},{ave_gpu_req[user]:.1f},{ntot_cpu},{nca_cpu[user]},{ncd_cpu[user]},{nf_cpu[user]},{noom_cpu[user]},{nto_cpu[user]},{ntot_gpu},{nca_gpu[user]},{ncd_gpu[user]},{nf_gpu[user]},{noom_gpu[user]},{nto_gpu[user]}")
