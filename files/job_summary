@@ -110,8 +110,6 @@ else:
         nf[User] = nf[User] + 1
       elif 'MEMORY' in State:
         noom[User] = noom[User] + 1
-      elif 'PREEMPTED' in State:
-        npr[User] = npr[User] + 1
       elif 'TIME' in State:
         nto[User] = nto[User] + 1
 
@@ -138,7 +136,7 @@ else:
 
         pattern = '%Y-%m-%dT%H:%M:%S'
         Submit = int(time.mktime(time.strptime(Submit, pattern)))
-        Start = int(time.mktime(time.strptime(Start.replace('None','1970-01-02T00:00:00'), pattern)))
+        Start = int(time.mktime(time.strptime(Start, pattern)))
 
         cpu_eff = np.divide(np.divide(TotalCPU, Elapsed, out=np.zeros_like(TotalCPU), where=Elapsed!=0), AllocCPUS)
 
