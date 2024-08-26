@@ -48,6 +48,11 @@ ncd_cpu = {}
 nf_cpu = {}
 noom_cpu = {}
 nto_cpu = {}
+nca_gpu = {}
+ncd_gpu = {}
+nf_gpu = {}
+noom_gpu = {}
+nto_gpu = {}
 
 MaxRSS = 0.
 
@@ -99,7 +104,7 @@ else:
         ncd_cpu[User] = 0
         nf_cpu[User] = 0
         noom_cpu[User] = 0
-        nto_gpu[User] = 0
+        nto_cpu[User] = 0
         nca_gpu[User] = 0
         ncd_gpu[User] = 0
         nf_gpu[User] = 0
@@ -118,7 +123,7 @@ else:
           noom_gpu[User] = noom_gpu[User] + 1
         elif 'TIME' in State:
           nto_gpu[User] = nto_gpu[User] + 1
-      else
+      else:
         if 'CANCELLED' in State:
           nca_cpu[User] = nca_cpu[User] + 1
         elif 'COMPLETED' in State:
