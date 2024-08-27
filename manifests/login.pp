@@ -1,7 +1,7 @@
 # slurm_stats::login sets up a login node to print out slurm statistics on user login
 class slurm_stats::login (
   String  $data_store = '/slurm/etc/slurm',
-  String  $doc_url    = 'https://docs.rc.fas.harvard.edu/fairshare',
+  String  $doc_url    = 'https://docs.rc.fas.harvard.edu/kb/slurm-stats',
   Integer $cronhour   = 1,
   Integer $cronmin    = 0,
 ){
