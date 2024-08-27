@@ -68,11 +68,10 @@ then
     printf "| GPUS   |     N/A |    %6s |        N/A | %9s GPU Hrs |\n" ${ave_gpu_req} ${tot_gpu_hours}
     printf "| Time   | %7s | %9s |     %6s |         %9s |\n" "${ave_time_use}h" "${ave_time_req}h" "${ave_time_eff}%" "${ave_wait_time}h"
     echo "+---------------------------------------------------------------+"
-    printf "| %40s |\n" "<%= @doc_url %>"
-    echo "+---------------------------------------------------------------+"
+
   else
     echo "+---------------No jobs completed on ${date} --------------------+"
-    printf "| %40s |\n" "<%= @doc_url %>"
-    echo "+---------------------------------------------------------------+"
   fi
+  printf "| %-30s |\n" "<%= @doc_url %>"
+  echo "+---------------------------------------------------------------+"
 fi
