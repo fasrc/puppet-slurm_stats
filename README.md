@@ -21,7 +21,7 @@ The second is `login` which is for hosts where a user will login. It sets up a c
 |        | Used    | Allocated | Efficiency | Ave. Wait Time    |
 | Cores  |     4.3 |       5.5 |      69.4% |    133.00 CPU Hrs |
 | Memory |   22.2G |     27.2G |      68.3% |                   |
-| GPUS   |         |       1.0 |            |    100.20 GPU Hrs |
+| GPUS   |     N/A |       1.0 |        N/A |    100.20 GPU Hrs |
 | Time   |  14.57h |    45.38h |      45.9% |             0.00h |
 +---------------------------------------------------------------+
 | https://docs.rc.fas.harvard.edu/kb/slurm-stats                |
