@@ -56,8 +56,8 @@ then
     noom_gpu=$(echo ${js} | cut -d ',' -f 25)
     nto_gpu=$(echo ${js} | cut -d ',' -f 26)
     echo "+-------------------- Jobs By State ----------------------------+"
-    echo "|    Total   | Completed | Canceled | Failed | Out of | Timed  |"
-    echo "|            |           |          |        | Memory |   Out  |"
+    echo "|       Total | Completed | Canceled | Failed | Out of | Timed  |"
+    echo "|             |           |          |        | Memory |   Out  |"
     printf "| CPU: %6d |    %6d |   %6d | %6d | %6d | %6d |\n" ${ntot_cpu} ${ncd_cpu} ${nca_cpu} ${nf_cpu} ${noom_cpu} ${nto_cpu}
     printf "| GPU: %6d |    %6d |   %6d | %6d | %6d | %6d |\n" ${ntot_gpu} ${ncd_gpu} ${nca_gpu} ${nf_gpu} ${noom_gpu} ${nto_gpu}
     echo "+---------------------- Job Stats ------------------------------+"
