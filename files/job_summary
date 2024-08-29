@@ -154,7 +154,7 @@ else:
 
         TotalCPU = time_to_float(TotalCPU)
         Elapsed = time_to_float(Elapsed)
-        Timelimit = time_to_float(Timelimit.replace('UNLIMITED','365-00:00:00'))
+        Timelimit = time_to_float(Timelimit.replace('UNLIMITED','365-00:00:00').replace('Partition_Limit','365-00:00:00'))
 
         pattern = '%Y-%m-%dT%H:%M:%S'
         Submit = int(time.mktime(time.strptime(Submit, pattern)))
