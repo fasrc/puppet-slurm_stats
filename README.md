@@ -2,7 +2,7 @@
 This module generates and prints summary statistics for users when they initiate a session. This is done by including a file in `/etc/profile.d/` on the login (or login like) host.
 
 ## How it works
-This module has two classes. The first `data` is for the host where you intend to pull and store the data from Slurm. This class sets up a cronjob that runs a script which pulls the data from Slurm and then stores it to a location that is available on the network.
+This module has two classes. The first `data` is for the host where you intend to pull and store the data from Slurm. This class sets up a cronjob that runs a script which pulls the data from Slurm and then stores it to a location that is available on the network. Note that this script depends on having [Job Summaries](https://princetonuniversity.github.io/jobstats/setup/summaries/) stored in the AdminComment of sacct from [Princeton Jobstats](https://princetonuniversity.github.io/jobstats/).
 
 The second is `login` which is for hosts where a user will login. It sets up a cronjob to copy the data from the network location to a local location on the node `/usr/local/share/slurm_stats`. It then lays down a script at `/etc/profile.d/zzz-slurm_stats.sh` which handles the printing of the data when the user logs in. Since the profile script only looks at the local node for the data, it will not block or delay logins even if slurm is busy or down.
 
