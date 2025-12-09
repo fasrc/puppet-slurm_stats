@@ -42,19 +42,21 @@ then
     ave_time_eff=$(echo ${js} | cut -d ',' -f 11)
     ave_wait_time=$(echo ${js} | cut -d ',' -f 12)
     tot_gpu_hours=$(echo ${js} | cut -d ',' -f 13)
-    ave_gpu_req=$(echo ${js} | cut -d ',' -f 14)
-    ntot_cpu=$(echo ${js} | cut -d ',' -f 15)
-    nca_cpu=$(echo ${js} | cut -d ',' -f 16)
-    ncd_cpu=$(echo ${js} | cut -d ',' -f 17)
-    nf_cpu=$(echo ${js} | cut -d ',' -f 18)
-    noom_cpu=$(echo ${js} | cut -d ',' -f 19)
-    nto_cpu=$(echo ${js} | cut -d ',' -f 20)
-    ntot_gpu=$(echo ${js} | cut -d ',' -f 21)
-    nca_gpu=$(echo ${js} | cut -d ',' -f 22)
-    ncd_gpu=$(echo ${js} | cut -d ',' -f 23)
-    nf_gpu=$(echo ${js} | cut -d ',' -f 24)
-    noom_gpu=$(echo ${js} | cut -d ',' -f 25)
-    nto_gpu=$(echo ${js} | cut -d ',' -f 26)
+    ave_gpu_use=$(echo ${js} | cut -d ',' -f 14)
+    ave_gpu_req=$(echo ${js} | cut -d ',' -f 15)
+    ave_gpu_eff=$(echo ${js} | cut -d ',' -f 16)
+    ntot_cpu=$(echo ${js} | cut -d ',' -f 17)
+    nca_cpu=$(echo ${js} | cut -d ',' -f 18)
+    ncd_cpu=$(echo ${js} | cut -d ',' -f 19)
+    nf_cpu=$(echo ${js} | cut -d ',' -f 20)
+    noom_cpu=$(echo ${js} | cut -d ',' -f 21)
+    nto_cpu=$(echo ${js} | cut -d ',' -f 22)
+    ntot_gpu=$(echo ${js} | cut -d ',' -f 23)
+    nca_gpu=$(echo ${js} | cut -d ',' -f 24)
+    ncd_gpu=$(echo ${js} | cut -d ',' -f 25)
+    nf_gpu=$(echo ${js} | cut -d ',' -f 26)
+    noom_gpu=$(echo ${js} | cut -d ',' -f 27)
+    nto_gpu=$(echo ${js} | cut -d ',' -f 28)
     echo "+-------------------- Jobs By State ----------------------------+"
     echo "|       Total | Completed | Canceled | Failed | Out of |  Timed |"
     echo "|             |           |          |        | Memory |    Out |"
@@ -65,7 +67,7 @@ then
     echo "|        | Used    | Allocated | Efficiency | Ave. Wait Time    |"
     printf "| Cores  | %7s |   %7s |     %6s | %9s CPU Hrs |\n" ${ave_core_use} ${ave_cpu_req} "${ave_cpu_eff}%" ${tot_cpu_hours}
     printf "| Memory | %7s |  %8s |     %6s |                   |\n" "${ave_mem_use}G" "${ave_mem_req}G" "${ave_mem_eff}%"
-    printf "| GPUS   |     N/A |    %6s |        N/A | %9s GPU Hrs |\n" ${ave_gpu_req} ${tot_gpu_hours}
+    printf "| GPUS   | %7s |   %7s |     %6s | %9s GPU Hrs |\n" ${ave_gpu_use} ${ave_gpu_req} "${ave_gpu_eff}%" ${tot_gpu_hours}
     printf "| Time   | %7s | %9s |     %6s |         %9s |\n" "${ave_time_use}h" "${ave_time_req}h" "${ave_time_eff}%" "${ave_wait_time}h"
     echo "+---------------------------------------------------------------+"
 

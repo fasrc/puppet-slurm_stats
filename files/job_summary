@@ -5,6 +5,11 @@ import time,datetime
 from os import path
 from datetime import date
 import numpy as np
+import json
+import gzip
+import base64
+from typing import Optional
+import pandas as pd
 
 def time_to_float(time):
     """ converts [dd-[hh:]]mm:ss time to seconds """
@@ -25,6 +30,12 @@ def time_to_float(time):
 
     return days + hours + mins + secs
 
+def get_stats_dict(ss64: Optional[str]) -> dict:
+    """Convert the base64-encoded summary statistics to JSON."""
+    if (not ss64) or pd.isna(ss64) or ss64 == "JS1:Short" or ss64 == "JS1:None":
+        return {}
+    return json.loads(gzip.decompress(base64.b64decode(ss64[4:])))
+
 #Initial Settings
 User = ""
 num_j = {}
@@ -41,7 +52,9 @@ ave_time_use = {}
 ave_time_req = {}
 ave_time_eff = {}
 ave_wait_time = {}
+ave_gpu_use = {}
 ave_gpu_req = {}
+ave_gpu_eff = {}
 
 nca_cpu = {}
 ncd_cpu = {}
@@ -59,7 +72,7 @@ MaxRSS = 0.
 try:
   # Grab data from slurm
   proc = subprocess.Popen(
-    'sacct -anP --units=G --format=User,Elapsed,ReqMem,AllocCPUS,ReqCPUS,Timelimit,State,TotalCPU,MaxRSS,Submit,Start,ReqTRES --state=CA,CD,F,OOM,TO -S {d}T00:00:00 -E {d}T23:59:59'.format(
+    'sacct -anP --units=G --format=User,Elapsed,ReqMem,AllocCPUS,ReqCPUS,Timelimit,State,TotalCPU,MaxRSS,Submit,Start,ReqTRES,AdminComment --state=CA,CD,F,OOM,TO -S {d}T00:00:00 -E {d}T23:59:59'.format(
       d = date.today()-datetime.timedelta(1)
     ).split(),
     stdout=subprocess.PIPE,
@@ -71,7 +84,7 @@ except Exception:
 else:
   for line in proc.stdout:
     # Split out data
-    (LUser, LElapsed, LReqMem, LAllocCPUS, LReqCPUS, LTimelimit, LState, LTotalCPU, LMaxRSS, LSubmit, LStart, LReqTRES) = line.strip().split('|')
+    (LUser, LElapsed, LReqMem, LAllocCPUS, LReqCPUS, LTimelimit, LState, LTotalCPU, LMaxRSS, LSubmit, LStart, LReqTRES, AdminComment) = line.strip().split('|')
     if LUser != "":
       # If this the start of a new Job permanently store data
       if User != "" and 'CANCELLED' not in State:
@@ -99,7 +112,9 @@ else:
         ave_time_req[User] = 0.
         ave_time_eff[User] = 0.
         ave_wait_time[User] = 0.
+        ave_gpu_use[User] = 0.
         ave_gpu_req[User] = 0.
+        ave_gpu_eff[User] = 0.
         nca_cpu[User] = 0
         ncd_cpu[User] = 0
         nf_cpu[User] = 0
@@ -150,12 +165,16 @@ else:
         ReqTRES = LReqTRES
         MaxRSS = 0.
 
+        JobStats = get_stats_dict(AdminComment)
+
         ReqMem = float(ReqMem.replace('G', ''))
 
         TotalCPU = time_to_float(TotalCPU)
         Elapsed = time_to_float(Elapsed)
-        Timelimit = time_to_float(Timelimit.replace('UNLIMITED','365-00:00:00').replace('Partition_Limit','365-00:00:00'))
+        Timelimit = time_to_float(Timelimit.replace('UNLIMITED','365-00:00:00'))
 
+        if Start == 'None':
+          Start = Submit
         pattern = '%Y-%m-%dT%H:%M:%S'
         Submit = int(time.mktime(time.strptime(Submit, pattern)))
         Start = int(time.mktime(time.strptime(Start, pattern)))
@@ -172,6 +191,21 @@ else:
           gpu_req = gpu_req.replace('gres/gpu=', '')
           ave_gpu_req[User] = ave_gpu_req[User] + float(gpu_req)
           tot_gpu_hours[User] = tot_gpu_hours[User] + float(gpu_req) * Elapsed
+
+          if JobStats:
+            gpu_use = 0.
+            for node in JobStats['nodes']:
+              try:
+                gpus = list(JobStats['nodes'][node]['gpu_utilization'].keys())
+              except Exception:
+                exit
+              else:
+                for gpu in gpus:
+                  util = JobStats['nodes'][node]['gpu_utilization'][gpu]
+                  gpu_use = gpu_use + util/100.0
+
+            ave_gpu_use[User] = ave_gpu_use[User] + gpu_use
+            ave_gpu_eff[User] = ave_gpu_eff[User] + gpu_use / float(gpu_req)
 
         # Storing Results
         tot_cpu_hours[User] = tot_cpu_hours[User] + AllocCPUS * Elapsed
@@ -211,7 +245,9 @@ for user in nca_cpu:
   ave_time_req[user] = ave_time_req[user] / num_j[user]
   ave_time_eff[user] = ave_time_eff[user] * 100 / num_j[user]
   ave_wait_time[user] = ave_wait_time[user] / num_j[user]
+  ave_gpu_use[user] = ave_gpu_use[user] / num_jgpu[user]
   ave_gpu_req[user] = ave_gpu_req[user] / num_jgpu[user]
+  ave_gpu_eff[user] = ave_gpu_eff[user] * 100 / num_jgpu[user]
 
   #Normalize Time to Hours
   ave_time_use[user] = ave_time_use[user] / 3600.0
@@ -221,4 +257,4 @@ for user in nca_cpu:
   tot_gpu_hours[user] = tot_gpu_hours[user] / 3600.0
 
   # Dumping Data
-  print(f"{user},{tot_cpu_hours[user]:.2f},{ave_core_use[user]:.1f},{ave_cpu_req[user]:.1f},{ave_cpu_eff[user]:.1f},{ave_mem_use[user]:.1f},{ave_mem_req[user]:.1f},{ave_mem_eff[user]:.1f},{ave_time_use[user]:.2f},{ave_time_req[user]:.2f},{ave_time_eff[user]:.1f},{ave_wait_time[user]:.2f},{tot_gpu_hours[user]:.2f},{ave_gpu_req[user]:.1f},{ntot_cpu},{nca_cpu[user]},{ncd_cpu[user]},{nf_cpu[user]},{noom_cpu[user]},{nto_cpu[user]},{ntot_gpu},{nca_gpu[user]},{ncd_gpu[user]},{nf_gpu[user]},{noom_gpu[user]},{nto_gpu[user]}")
+  print(f"{user},{tot_cpu_hours[user]:.2f},{ave_core_use[user]:.1f},{ave_cpu_req[user]:.1f},{ave_cpu_eff[user]:.1f},{ave_mem_use[user]:.1f},{ave_mem_req[user]:.1f},{ave_mem_eff[user]:.1f},{ave_time_use[user]:.2f},{ave_time_req[user]:.2f},{ave_time_eff[user]:.1f},{ave_wait_time[user]:.2f},{tot_gpu_hours[user]:.2f},{ave_gpu_use[user]:.1f},{ave_gpu_req[user]:.1f},{ave_gpu_eff[user]:.1f},{ntot_cpu},{nca_cpu[user]},{ncd_cpu[user]},{nf_cpu[user]},{noom_cpu[user]},{nto_cpu[user]},{ntot_gpu},{nca_gpu[user]},{ncd_gpu[user]},{nf_gpu[user]},{noom_gpu[user]},{nto_gpu[user]}")
